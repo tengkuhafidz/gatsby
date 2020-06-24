@@ -9,6 +9,7 @@ import { joinPath } from "gatsby-core-utils"
 import { store, emitter } from "../redux/"
 import { IGatsbyState, IGatsbyPage } from "../redux/types"
 import { writeModule } from "../utils/gatsby-webpack-virtual-modules"
+import { requiresWriterLock } from "../utils/service-locks"
 
 interface IGatsbyPageComponent {
   component: string
@@ -257,15 +258,19 @@ const preferDefault = m => m && m.default || m
   return true
 }
 
+const writeAllWithActivity = async (): Promise<void> => {
+  requiresWriterLock.markStartRun()
+  const activity = reporter.activityTimer(`write out requires`, {
+    id: `requires-writer`,
+  })
+  activity.start()
+  await writeAll(store.getState())
+  activity.end()
+  requiresWriterLock.markEndRun()
+}
+
 const debouncedWriteAll = _.debounce(
-  async (): Promise<void> => {
-    const activity = reporter.activityTimer(`write out requires`, {
-      id: `requires-writer`,
-    })
-    activity.start()
-    await writeAll(store.getState())
-    activity.end()
-  },
+  () => requiresWriterLock.runOrEnqueue(writeAllWithActivity),
   500,
   {
     // using "leading" can cause double `writeAll` call - particularly
@@ -274,6 +279,18 @@ const debouncedWriteAll = _.debounce(
   }
 )
 
+const controlledWriteAll = (): void => {
+  requiresWriterLock.markAsPending()
+
+  // If any of services that impact this one are running - queue writing after those services finish.
+  // If none are running - debounce, because we might just receive few more random external events
+  // which we want to aggregate
+  requiresWriterLock.runOrEnqueue({
+    enqueue: writeAllWithActivity,
+    run: debouncedWriteAll,
+  })
+}
+
 /**
  * Start listening to CREATE/DELETE_PAGE events so we can rewrite
  * files as required
@@ -281,21 +298,21 @@ const debouncedWriteAll = _.debounce(
 export const startListener = (): void => {
   emitter.on(`CREATE_PAGE`, (): void => {
     reporter.pendingActivity({ id: `requires-writer` })
-    debouncedWriteAll()
+    controlledWriteAll()
   })
 
   emitter.on(`CREATE_PAGE_END`, (): void => {
     reporter.pendingActivity({ id: `requires-writer` })
-    debouncedWriteAll()
+    controlledWriteAll()
   })
 
   emitter.on(`DELETE_PAGE`, (): void => {
     reporter.pendingActivity({ id: `requires-writer` })
-    debouncedWriteAll()
+    controlledWriteAll()
   })
 
   emitter.on(`DELETE_PAGE_BY_PATH`, (): void => {
     reporter.pendingActivity({ id: `requires-writer` })
-    debouncedWriteAll()
+    controlledWriteAll()
   })
 }

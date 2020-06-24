@@ -19,7 +19,7 @@ import {
   showFeedbackRequest,
 } from "../utils/feedback"
 import { startRedirectListener } from "../bootstrap/redirects-writer"
-import { markWebpackStatusAsPending } from "../utils/webpack-status"
+import { webpackLock } from "../utils/service-locks"
 
 import { IProgram, IDebugInfo } from "./types"
 import {
@@ -129,7 +129,7 @@ module.exports = async (program: IDevelopArgs): Promise<void> => {
     )
   }
   initTracer(program.openTracingConfigFile)
-  markWebpackStatusAsPending()
+  webpackLock.markAsPending()
   reporter.pendingActivity({ id: `webpack-develop` })
   telemetry.trackCli(`DEVELOP_START`)
   telemetry.startBackgroundUpdate()

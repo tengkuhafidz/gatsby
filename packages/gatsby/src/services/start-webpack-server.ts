@@ -3,7 +3,7 @@ import report from "gatsby-cli/lib/reporter"
 import formatWebpackMessages from "react-dev-utils/formatWebpackMessages"
 import chalk from "chalk"
 import { Compiler } from "webpack"
-import { isEqual } from "lodash"
+import { isEqual, debounce } from "lodash"
 
 import {
   reportWebpackWarnings,
@@ -16,12 +16,9 @@ import { prepareUrls } from "../utils/prepare-urls"
 import { startServer } from "../utils/start-server"
 import { WebsocketManager } from "../utils/websocket-manager"
 import { IBuildContext } from "./"
-import {
-  markWebpackStatusAsPending,
-  markWebpackStatusAsDone,
-} from "../utils/webpack-status"
 import { enqueueFlush } from "../utils/page-data"
 import mapTemplatesToStaticQueryHashes from "../utils/map-templates-to-static-query-hashes"
+import { webpackLock, pageDataFlushLock } from "../utils/service-locks"
 
 export async function startWebpackServer({
   program,
@@ -35,10 +32,23 @@ export async function startWebpackServer({
   if (!program || !app || !store) {
     report.panic(`Missing required params`)
   }
-  let { compiler, webpackActivity, websocketManager } = await startServer(
-    program,
-    app,
-    workerPool
+
+  webpackLock.markStartRun()
+
+  let {
+    compiler,
+    webpackActivity,
+    websocketManager,
+    webpackWatching,
+  } = await startServer(program, app, workerPool)
+
+  const debounceWebpackResume = debounce(
+    () => {
+      webpackLock.markStartRun()
+      webpackWatching.resume()
+    },
+    300,
+    { leading: false }
   )
 
   compiler.hooks.invalid.tap(`log compiling`, function () {
@@ -47,15 +57,13 @@ export async function startWebpackServer({
       // when input is invalidated during compilation, webpack will automatically
       // run another compilation round before triggering `done` event
       report.pendingActivity({ id: `webpack-develop` })
-      markWebpackStatusAsPending()
+      webpackLock.markAsPending()
+      webpackLock.runOrEnqueue(debounceWebpackResume)
     }
   })
 
   compiler.hooks.watchRun.tapAsync(`log compiling`, function (_, done) {
     if (!webpackActivity) {
-      // there can be multiple `watchRun` events before receiving single `done` event
-      // webpack will not emit assets or `done` event until all pending invalidated
-      // inputs were compiled
       webpackActivity = report.activityTimer(`Re-building development bundle`, {
         id: `webpack-develop`,
       })
@@ -156,7 +164,9 @@ export async function startWebpackServer({
         enqueueFlush()
       }
 
-      markWebpackStatusAsDone()
+      webpackWatching.suspend()
+      webpackLock.markEndRun()
+      pageDataFlushLock.runOrEnqueue(enqueueFlush)
       done()
 
       resolve({ compiler, websocketManager })
