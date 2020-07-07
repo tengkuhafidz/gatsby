@@ -26,7 +26,7 @@ Plural fields accept four arguments - `filter`, `sort`, `skip` and `limit`. `fil
 
 ## Singular root fields
 
-Singular root fields accept same `filter` parameter as plural, but the `filter` is spread directily into arguments. Thus filter parameters need to be passed to the field directly. They return the resulting object directly.
+Singular root fields accept same `filter` parameter as plural, but the `filter` is spread directly into arguments. Thus filter parameters need to be passed to the field directly. They return the resulting object directly.
 
 If no parameters are passed they return a random node of that type (if any exist). That random node type is explicitly undefined and there is no guarantee that it will be stable (or unstable) between builds or rebuilds. If no node was found according to the filter, null is returned.
 

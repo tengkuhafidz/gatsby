@@ -2,7 +2,7 @@
 title: Schema Generation
 ---
 
-Once the nodes have been sourced and transformed, the next step is to generate the GraphQL Schema. Gatsby Schema is different from many regular GraphQL schemas is that it's combines plugin or user defined schema information with data inferred from node shapes itself. The latter is called _schema inferrence_. Users or plugin can explicity define whole or part of the schema using [schema customization API](/docs/schema-customization). Usually every node will get a GraphQL Type based on its `node.internal.type` field. When using Schema Customization, all types that implement `Node` inteface become GraphQL Node Types and thus get root level fields for accessing them.
+Once the nodes have been sourced and transformed, the next step is to generate the GraphQL Schema. Gatsby Schema is different from many regular GraphQL schemas is that it combines plugin or user defined schema information with data inferred from node shapes itself. The latter is called _schema inferrence_. Users or plugin can explicitly define whole or part of the schema using [schema customization API](/docs/schema-customization). Usually every node will get a GraphQL Type based on its `node.internal.type` field. When using Schema Customization, all types that implement `Node` interface become GraphQL Node Types and thus get root level fields for accessing them.
 
 ## GraphQL Compose
 
@@ -34,7 +34,7 @@ This allows adding GraphQL Fields to any node type. This operates on GraphQL typ
 
 ### `graphql-config.js` mapping
 
-It's possible to connect types throught site configuration using [Node Type Mapping](https://www.gatsbyjs.org/docs/gatsby-config/#mapping-node-types).
+It's possible to connect types throughout site configuration using [Node Type Mapping](https://www.gatsbyjs.org/docs/gatsby-config/#mapping-node-types).
 
 It is a convenient escape hatch and there are no plans to deprecate this API at the moment.
 
@@ -56,7 +56,7 @@ Those types are used to create _root fields_ of the schema in `Query` type. For 
 
 ## 6. Merging in third-party schemas
 
-If a plugin like `gatsby-source-graphql` is used, all third-party schemas that it provided are merged in into the Gatsby schema.
+If a plugin like `gatsby-source-graphql` is used, all third-party schemas that it provided are merged into the Gatsby schema.
 
 ## 7. Adding custom resolvers
 
