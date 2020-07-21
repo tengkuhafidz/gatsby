@@ -2,47 +2,47 @@
 title: Schema Generation
 ---
 
-Once the nodes have been sourced and transformed, the next step is to generate the GraphQL Schema. Gatsby Schema is different from many regular GraphQL schemas is that it combines plugin or user defined schema information with data inferred from node shapes itself. The latter is called _schema inferrence_. Users or plugin can explicitly define whole or part of the schema using [schema customization API](/docs/schema-customization). Usually every node will get a GraphQL Type based on its `node.internal.type` field. When using Schema Customization, all types that implement `Node` interface become GraphQL Node Types and thus get root level fields for accessing them.
+Once the nodes have been sourced and transformed, the next step is to generate the GraphQL Schema. Gatsby Schema is different from many regular GraphQL schemas in that it combines plugin or user defined schema information with data inferred from the nodes' shapes. The latter is called _schema inference_. Users or plugins can explicitly define the schema, in whole or in part, using the [schema customization API](/docs/schema-customization). Usually, every node will get a GraphQL Type based on its `node.internal.type` field. When using Schema Customization, all types that implement the `Node` interface become GraphQL Node Types and thus get root level fields for accessing them.
 
 ## GraphQL Compose
 
-Schema creation is done using [`graphql-compose`](https://github.com/graphql-compose/graphql-compose) library. GraphQL Compose is a toolkit to programmatically create schemas. It has great tools to add types and fields in an iterative manner. Gatsby does lots of processing and schema generation, thus such library is perfect for our use case.
+Schema creation is done using the [`graphql-compose`](https://github.com/graphql-compose/graphql-compose) library. GraphQL Compose is a toolkit for creating schemas programmatically. It has great tools to add types and fields in an iterative manner. Gatsby does lots of processing and schema generation, so a library like this fits the use case perfectly.
 
-Schema in GraphQL Compose is created by adding types to a Schema Composer - an intermediate object that holds all the schema types inside itself. After all modifications are done, composer is converted into regular GraphQL Schema.
+You can create a schema in GraphQL Compose by adding types to a Schema Composer - an intermediate object that holds all the schema types inside itself. After all modifications are done, the composer is converted into a regular GraphQL Schema.
 
 ## 1. Schema inference
 
-Every time a node is created Gatsby will generate _inference metadata_ for it. Metadata for each node can be merged with other metadata, meaning that it's possible to derive the least generic possible schema for a particular node type. Inference metadata can also detect if some data is conflicting. In most cases, this would mean that a warning will be reported for the user and the field won't appear in the data.
+Every time a node is created, Gatsby will generate _inference metadata_ for it. Metadata for each node can be merged with other metadata, meaning that it's possible to derive the least generic possible schema for a particular node type. Inference metadata can also detect if some data is conflicting. In most cases, this would mean that a warning will be reported for the user and the field won't appear in the data.
 
 This step is explained in more detail in [Schema Inference](/docs/schema-inference)
 
 ## 2. Adding types
 
-Types that are added by users and plugins using `createTypes` are added to the schema composer. The types that don't have inference disabled will also get types created from Schema Inference merged into them, with user created fields having priority. After that inferred types that haven't been created are also added to the composer.
+When users and plugins add types using `createTypes`, those types are added to the schema composer. The types that don't have inference disabled will also get types created from Schema Inference merged into them, with user created fields having priority. After that, inferred types that haven't been created are also added to the composer.
 
 ## 3. Legacy schema customization
 
-Before schema customization was added, there were several ways that one could modify the schema. Those were `createNodeField` action, `setFieldsOnGraphQLType` API and `gatsby-config` mappings.
+Before schema customization was added, there were several ways that one could modify the schema. Those were the `createNodeField` action, `setFieldsOnGraphQLType` API and `graphql-config.js` mappings.
 
 ### `createNodeField`
 
-This adds a field under `fields` field (yo dawg). This method is needed because plugins can't modify types that they haven't created, so this is a way to add data to nodes that it doesn't own. This doesn't modify schema directly, instead those fields are picked by inference. There are no plans currently to deprecate this API at the moment.
+This adds a field under the `fields` field. Plugins can't modify types that they haven't created, so you can use this method to add data to nodes that your plugin doesn't own. This doesn't modify the schema directly. Instead, those fields are picked by inference. There are no plans to deprecate this API at the moment.
 
 ### `setFieldsOnGraphQLType`
 
-This allows adding GraphQL Fields to any node type. This operates on GraphQL types itself and syntax matches `graphql-js` field definitions. This API will be marked as deprecated in Gatsby v3, moved under flag in Gatsby v4 and removed from Gatsby v5. `createTypes` and `addResolvers` should solve all the use cases when this API is used.
+This allows adding GraphQL Fields to any node type. This operates on GraphQL types itself and the syntax matches `graphql-js` field definitions. This API will be marked as deprecated in Gatsby v3, moved under a flag in Gatsby v4, and removed from Gatsby v5. `createTypes` and `addResolvers` should solve all the use cases for this API.
 
 ### `graphql-config.js` mapping
 
-It's possible to connect types throughout site configuration using [Node Type Mapping](https://www.gatsbyjs.org/docs/gatsby-config/#mapping-node-types).
+It's possible to connect types throughout site configuration using [Node Type Mapping](/docs/gatsby-config/#mapping-node-types).
 
 It is a convenient escape hatch and there are no plans to deprecate this API at the moment.
 
 ## 4. Parent / children relationships
 
-Nodes can be connected into _child-parent_ relationships either with using [`createParentChildLink`](https://www.gatsbyjs.org/docs/actions/#createParentChildLink) or by putting `parent` field into raw node data to parent id. Child types can always access parent with `parent` field in GraphQL. Parent types also get both `children` fields, as well as "convenience child fields" `child[TypeName]` or `children[TypeName]`.
+Nodes can be connected into _child-parent_ relationships either by using [`createParentChildLink`](/docs/actions/#createParentChildLink) or by adding the `parent` field to raw node data. Child types can always access parent with the `parent` field in GraphQL. Parent types also get `children` fields as well as "convenience child fields" `child[TypeName]` or `children[TypeName]`.
 
-Children types are either inferred from data or created using `@childOf` directive, either by parent type name of by mimeType (only for File parent types).
+Children types are either inferred from data or created using `@childOf` directive, either by parent type name or by mimeType (only for File parent types).
 
 ## 5. Processing each type and adding root fields
 
@@ -50,7 +50,7 @@ See [Schema Root Fields and Utility Types](/docs/schema-root-fields) for a more 
 
 For each type, utility types are created. Those are input object types, used for searching, sorting and filtering, and types for paginated data (Connections and Edges).
 
-For searching and sorting, Gatsby goes through every field in the type and converts them to corresponding Input GraphQL types. Scalars are converted to objects with filter operator fields like "eq" or "ni", ObjectTypes are converted to InputObjectTypes. For sorting, enums are created out of all fields so that one can use that to specify the sort.
+For searching and sorting, Gatsby goes through every field in the type and converts them to corresponding Input GraphQL types. Scalars are converted to objects with filter operator fields like "eq" or "ni". ObjectTypes are converted to InputObjectTypes. For sorting, enums are created out of all fields so that one can use that to specify the sort.
 
 Those types are used to create _root fields_ of the schema in `Query` type. For each node type a root field for querying one item and paginated items are created (eg for type BlogPost it would be `blogPost` and `allBlogPost`).
 
@@ -60,10 +60,10 @@ If a plugin like `gatsby-source-graphql` is used, all third-party schemas that i
 
 ## 7. Adding custom resolvers
 
-[`createResolvers`](https://www.gatsbyjs.org/docs/schema-customization/#createresolvers-api) API is called, allowing users to add additional customization on top of created schema. This is an "escape hatch" API, as it allows to modify any fields or types in the Schema, including Query type.
+[`createResolvers`](/docs/schema-customization/#createresolvers-api) API is called, allowing users to add additional customization on top of created schema. This is an "escape hatch" API, as it allows to modify any fields or types in the Schema, including Query type.
 
 ## 8. Second schema build for SitePage
 
-Because SitePage nodes are created after schema is first created (at `createPages`) API call, type of `SitePage.context` field can change based on which context was passed to pages. Therefore an additional schema inference pass happens and then schema is updated.
+Because SitePage nodes are created after a schema is first created (at `createPages`) API call, the type of the `SitePage.context` field can change based on which context was passed to pages. Therefore, an additional schema inference pass happens and then the schema is updated.
 
 Note that this behaviour will be removed in Gatsby v3 and context will become a list of key/value pairs in GraphQL.

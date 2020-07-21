@@ -4,15 +4,15 @@ title: Schema Root Fields and Utility Types
 
 ## What are Schema Root Fields?
 
-Schema Root Fields are "entry point" of any GraphQL query. Gatsby generates two root fields for each `Node` type that has been created as a result of [Schema Generation](/docs/schema-generation). Third-party schemas and `createResolvers` API can add additional root fields on top of those.
+Schema Root Fields are the "entry point" of any GraphQL query. Gatsby generates two root fields for each `Node` type that gets created as a result of [Schema Generation](/docs/schema-generation). Third-party schemas and the `createResolvers` API can add additional root fields on top of those.
 
-The root fields that Gatsby generates are used to retrieve either one item of certain type or many items of that type. For example, for type `BlogPost`, Gatsby will create `blogPost` and `allBlogPost` root fields.
+The root fields that Gatsby generates are used to retrieve either one item of a certain type or many items of that type. For example, for type `BlogPost`, Gatsby will create `blogPost` and `allBlogPost` root fields.
 
 While those fields can be used without any arguments, the additional power lies in the fact that they accept additional parameters to filter, sort or paginate the resulting data. As those parameters depend on a particular type that they are used for, Gatsby generates _Utility Types_ to support those. Those types are used in the root fields to support filtering or sorting, as well as to return Paginated Data.
 
 ## Plural root fields
 
-Plural fields accept four arguments - `filter`, `sort`, `skip` and `limit`. `filter` allows filtering based on node field values (see Filter Types below), `sort` sorts the result (see Sorting types below). `skip` and `limit` offsets the result by `skip` nodes and limits it to `limit` items. Plural root fields return Connection type (see Pagination Types below) for the returning type (eg `BlogPostConnection`).
+Plural fields accept four arguments - `filter`, `sort`, `skip` and `limit`. `filter` allows filtering based on node field values (see Filter Types below), `sort` sorts the result (see Sorting types below). `skip` and `limit` offsets the result by `skip` nodes and limits it to `limit` items. Plural root fields return a Connection type (see Pagination Types below) for the returning type (eg `BlogPostConnection`).
 
 ```
 {
@@ -26,9 +26,9 @@ Plural fields accept four arguments - `filter`, `sort`, `skip` and `limit`. `fil
 
 ## Singular root fields
 
-Singular root fields accept same `filter` parameter as plural, but the `filter` is spread directly into arguments. Thus filter parameters need to be passed to the field directly. They return the resulting object directly.
+Singular root fields accept the same `filter` parameter as plural, but the `filter` is spread directly into arguments. Thus filter parameters need to be passed to the field directly. They return the resulting object directly.
 
-If no parameters are passed they return a random node of that type (if any exist). That random node type is explicitly undefined and there is no guarantee that it will be stable (or unstable) between builds or rebuilds. If no node was found according to the filter, null is returned.
+If no parameters are passed, they return a random node of that type (if any exist). That random node type is explicitly undefined and there is no guarantee that it will be stable (or unstable) between builds or rebuilds. If no node was found according to the filter, null is returned.
 
 ```
 {
@@ -40,7 +40,7 @@ If no parameters are passed they return a random node of that type (if any exist
 
 ## Pagination types
 
-Gatsby uses a common pattern in GraphQL called [Connection](https://relay.dev/graphql/connections.htm). Confusingly that has nothing to do with connecting anything, but rather is an abstraction over pagination. When you query a connection, you get a slice of the resulting data based on passed `skip` and `limit` parameters. It also allows doing additional operations on a list, like doing grouping or distinct operations.
+Gatsby uses a common pattern in GraphQL called [Connections](https://relay.dev/graphql/connections.htm). This pattern has nothing to do with connecting anything, but rather is an abstraction over pagination. When you query a connection, you get a slice of the resulting data based on passed `skip` and `limit` parameters. It also allows doing additional operations on a list, like doing grouping or distinct operations.
 
 - `edges` - edge is the actual Node object together with additional metadata regarding it's location in the page. `edge` contains `node` - the actual object, and `next`/`prev` objects to get next or previous object from the current one.
 - `nodes` - a flat list of Node objects
@@ -56,7 +56,7 @@ Gatsby uses a common pattern in GraphQL called [Connection](https://relay.dev/gr
 
 ## Filter types
 
-For every Node type, a filter GraphQL input type is created. Gatsby has pre-created "operator types" for each scalar, like `StringQueryOperatorType', that has keys as possible operators (eg`eq`,`ne`) and values as appropriate values for them. Then Gatsby looks at every field in the type and executes roughly the following algorithm.
+For every Node type, a filter GraphQL input type is created. Gatsby has pre-created "operator types" for each scalar, like `StringQueryOperatorType`, that has keys as possible operators (eg`eq`,`ne`) and values as appropriate values for them. Then Gatsby looks at every field in the type and executes roughly the following algorithm.
 
 1. If field is a scalar
    1.1 Get a corresponding operator type for that scalar type
